@@ -1,8 +1,23 @@
 using RSharp;
 
-string source = File.ReadAllText("hello.rsx");
-var lexer = new Lexer(source);
-var tokens = lexer.Tokenize();
+bool debug = Environment.GetEnvironmentVariable("DEBUG") == "1";
 
-foreach (var t in tokens)
-    Console.WriteLine(t);
+string source = File.ReadAllText("input.rsx");
+
+var tokens = new Lexer(source).Tokenize();
+if (debug)
+{
+    foreach (var t in tokens)
+        Console.WriteLine(t);
+}
+
+var functions = new Parser(tokens).ParseProgram();
+if (debug)
+{
+    foreach (var fn in functions)
+        Console.WriteLine($"Parsed: fn {fn.Name} -> {fn.ReturnType} ({fn.Body.Count} statement(s))");
+}
+
+int result = Emitter.EmitAndRun(functions);
+
+Console.WriteLine(result);

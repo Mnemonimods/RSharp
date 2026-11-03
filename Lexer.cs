@@ -2,30 +2,36 @@
 
 public enum TokenKind
 {
+    FnKeyword,
+    VoidKeyword,
     Int32Keyword,
+    Int64Keyword,
+    UInt32Keyword,
+    UInt64Keyword,
     Identifier,
     LParen,
     RParen,
     LBrace,
     RBrace,
+    LBracket,
+    RBracket,
     Return,
     IntLiteral,
     Semicolon,
+    Colon,
+    Arrow,
+    Plus,
+    Minus,
+    Equals,
     EndOfFile
 }
 
 public record Token(TokenKind Kind, string Text, int Position);
 
-public class Lexer
+public class Lexer(string source)
 {
-    private readonly string _source;
-    private int _pos;
-
-    public Lexer(string source)
-    {
-        _source = source;
-        _pos = 0;
-    }
+    private readonly string _source = source;
+    private int _pos = 0;
 
     public List<Token> Tokenize()
     {
@@ -48,11 +54,16 @@ public class Lexer
                     _pos++;
                 }
 
-                string word = _source.Substring(start, _pos - start);
+                string word = _source[start.._pos];
 
                 TokenKind kind = word switch
                 {
+                    "fn" => TokenKind.FnKeyword,
+                    "void" => TokenKind.VoidKeyword,
                     "i32" => TokenKind.Int32Keyword,
+                    "i64" => TokenKind.Int64Keyword,
+                    "u32" => TokenKind.UInt32Keyword,
+                    "u64" => TokenKind.UInt64Keyword,
                     "return" => TokenKind.Return,
                     _ => TokenKind.Identifier
                 };
@@ -68,9 +79,15 @@ public class Lexer
                     _pos++;
                 }
 
-                string num = _source.Substring(start, _pos - start);
+                string num = _source[start.._pos];
 
                 tokens.Add(new Token(TokenKind.IntLiteral, num, start));
+            }
+            /* dead code for arrow */
+            else if (c == '-' && _pos + 1 < _source.Length && _source[_pos + 1] == '>')
+            {
+                tokens.Add(new Token(TokenKind.Arrow, "->", _pos));
+                _pos += 2;
             }
             else
             {
@@ -80,8 +97,14 @@ public class Lexer
                     ')' => TokenKind.RParen,
                     '{' => TokenKind.LBrace,
                     '}' => TokenKind.RBrace,
+                    '[' => TokenKind.LBracket,
+                    ']' => TokenKind.RBracket,
                     ';' => TokenKind.Semicolon,
-                    _ => throw new NotImplementedException()
+                    ':' => TokenKind.Colon,
+                    '+' => TokenKind.Plus,
+                    '-' => TokenKind.Minus,
+                    '=' => TokenKind.Equals,
+                    _ => throw new NotImplementedException($"Unexpected character '{c}' at position {_pos}")
                 };
 
                 tokens.Add(new Token(kind, c.ToString(), _pos));

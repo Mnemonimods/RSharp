@@ -1,3 +1,5 @@
-i32 main() {
-    return 42;
+fn main(): i32 {
+    count: i32 = 10;
+    count = count + 5;
+    return count;
 }
