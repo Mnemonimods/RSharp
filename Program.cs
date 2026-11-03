@@ -18,6 +18,8 @@ if (debug)
         Console.WriteLine($"Parsed: fn {fn.Name} -> {fn.ReturnType} ({fn.Body.Count} statement(s))");
 }
 
+TypeChecker.Check(functions);
+
 int result = Emitter.EmitAndRun(functions);
 
-Console.WriteLine(result);
+Console.WriteLine($"Exit code: {result}");

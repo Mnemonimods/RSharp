@@ -3,6 +3,7 @@
 public enum TokenKind
 {
     FnKeyword,
+    IfKeyword,
     VoidKeyword,
     Int32Keyword,
     Int64Keyword,
@@ -23,6 +24,7 @@ public enum TokenKind
     Plus,
     Minus,
     Equals,
+    EqualsEquals,
     EndOfFile
 }
 
@@ -59,6 +61,7 @@ public class Lexer(string source)
                 TokenKind kind = word switch
                 {
                     "fn" => TokenKind.FnKeyword,
+                    "if" => TokenKind.IfKeyword,
                     "void" => TokenKind.VoidKeyword,
                     "i32" => TokenKind.Int32Keyword,
                     "i64" => TokenKind.Int64Keyword,
@@ -87,6 +90,11 @@ public class Lexer(string source)
             else if (c == '-' && _pos + 1 < _source.Length && _source[_pos + 1] == '>')
             {
                 tokens.Add(new Token(TokenKind.Arrow, "->", _pos));
+                _pos += 2;
+            }
+            else if (c == '=' && _pos + 1 < _source.Length && _source[_pos + 1] == '=')
+            {
+                tokens.Add(new Token(TokenKind.EqualsEquals, "==", _pos));
                 _pos += 2;
             }
             else

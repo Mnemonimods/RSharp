@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace RSharp;
 
 public class Parser
@@ -54,6 +56,25 @@ public class Parser
             return new ReturnStmt(value);
         }
 
+        if (_tokens[_pos].Kind == TokenKind.IfKeyword)
+        {
+            _pos++;
+            Expect(TokenKind.LParen);
+            Expr condition = ParseExpression();
+            Expect(TokenKind.RParen);
+            Expect(TokenKind.LBrace);
+
+            var thenStatements = new List<Stmt>();
+            while (_tokens[_pos].Kind != TokenKind.RBrace)
+            {
+                thenStatements.Add(ParseStatement());
+            }
+
+            Expect(TokenKind.RBrace);
+
+            return new IfStmt(condition, thenStatements);
+        }
+
         if (_tokens[_pos].Kind == TokenKind.Identifier && _tokens[_pos + 1].Kind == TokenKind.Colon)
         {
             Token nameToken = Expect(TokenKind.Identifier);
@@ -74,6 +95,13 @@ public class Parser
             return new AssignStmt(nameToken.Text, value);
         }
 
+        if (_tokens[_pos].Kind == TokenKind.Identifier && _tokens[_pos + 1].Kind == TokenKind.LParen)
+        {
+            Expr expr = ParseExpression();
+            Expect(TokenKind.Semicolon);
+            return new ExprStmt(expr);
+        }
+
         throw new Exception($"Unexpected token {_tokens[_pos].Kind} at position {_pos} while parsing a statement");
     }
 
@@ -81,9 +109,15 @@ public class Parser
     {
         Expr left = ParsePrimary();
 
-        while (_tokens[_pos].Kind is TokenKind.Plus or TokenKind.Minus)
+        while (_tokens[_pos].Kind is TokenKind.Plus or TokenKind.Minus or TokenKind.EqualsEquals)
         {
-            string op = _tokens[_pos].Kind == TokenKind.Plus ? "+" : "-";
+            string op = _tokens[_pos].Kind switch
+            {
+                TokenKind.Plus => "+",
+                TokenKind.Minus => "-",
+                TokenKind.EqualsEquals => "==",
+                _ => throw new NotImplementedException($"Unexpected operator token {_tokens[_pos].Kind}")
+            };
             _pos++;
             Expr right = ParsePrimary();
             left = new BinaryExpr(left, op, right);
@@ -104,6 +138,21 @@ public class Parser
         if (_tokens[_pos].Kind == TokenKind.Identifier)
         {
             Token token = Expect(TokenKind.Identifier);
+
+            if (_tokens[_pos].Kind == TokenKind.LParen)
+            {
+                Expect(TokenKind.LParen);
+
+                var args = new List<Expr>();
+                if (_tokens[_pos].Kind != TokenKind.RParen)
+                {
+                    args.Add(ParseExpression());
+                }
+
+                Expect(TokenKind.RParen);
+                return new CallExpr(token.Text, args);
+            }
+
             return new NameExpr(token.Text);
         }
 
